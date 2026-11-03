@@ -182,3 +182,9 @@ Os testes que exigem Docker devem ser executados num ambiente com Docker dispon�
 
 ## 9. Próxima fase
 Implementar aplicação, ficheiros .feature, passos pytest-bdd, testes unitários e de integração, mecanismo de geração de relatórios e validação Docker; apresentar plano e obter aprovação antes de publicar código.
+
+## 10. Regra de documentação pedagógica
+
+O código e os ficheiros de suporte (`Dockerfile`, `compose.yaml`, dependências, exclusões e scripts) devem explicar a finalidade das decisões relevantes. Cada teste deve ser rastreável a pelo menos um requisito e, quando aplicável, a uma User Story e a um cenário BDD. Os testes Python incluem um mapa de funções para IDs UT/IT no cabeçalho; os cenários Gherkin incluem os identificadores BDD/US/RF em comentários. Os relatórios XML e HTML são a evidência real de execução, não os comentários.
+
+**Limitações de validação:** BDD-09 verifica a configuração Compose, não prova que o contentor arranca; BDD-11 verifica relatórios previamente gerados; o teste HTTP da interface não executa JavaScript. Estas verificações exigem execução complementar antes de declarar validação completa.

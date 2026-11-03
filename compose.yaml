@@ -1,5 +1,9 @@
+# RT-05: um serviço; sem base de dados, filas ou volumes.
 services:
   smarttasks:
+    # RT-04: construir imagem a partir do Dockerfile local.
     build: .
+    # RT-06: publicar 8080 apenas no próprio computador;
+    # encaminhar para a porta 8000 do contentor.
     ports:
       - "127.0.0.1:8080:8000"

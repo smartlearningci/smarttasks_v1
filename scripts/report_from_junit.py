@@ -1,4 +1,7 @@
-"""Generate a standalone HTML report from pytest JUnit XML (no extra dependencies)."""
+"""RNF-06 / US-11: converter JUnit XML em relatório HTML autónomo.
+
+Mantém evidência de testes aprovados, falhados, ignorados e com erros.
+"""
 import html
 import sys
 import xml.etree.ElementTree as ET

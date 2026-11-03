@@ -1,3 +1,11 @@
+"""Testes HTTP via TestClient — RF-07 e RNF-06.
+
+test_health_and_empty_list: IT-01/08, RF-01/08, US-01/10, BDD-01/10.
+test_create_and_list: IT-02, RF-02, US-02, BDD-02.
+test_validation: IT-03, RF-03, US-02, BDD-02.
+test_complete_reopen_and_errors: IT-04/05/06/07, RF-04/05/07, US-03/04.
+test_html: IT-11, RNF-01/02; confirma HTML, não executa JavaScript.
+"""
 def test_health_and_empty_list(client):
     assert client.get('/health').json()=={'status':'ok'}
     assert client.get('/api/tasks').json()==[]

@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="pt-PT">
 <head>
+<!-- RNF-01/02: interface única, com lista e formulário de criação. -->
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SmartTasks — TaskFlow</title>
 <style>
@@ -19,6 +20,7 @@ li p{white-space:pre-wrap;margin:.35rem 0}.status{font-size:.85rem;color:#4c5b6c
 </head>
 <body><main>
 <h1>SmartTasks</h1><p class="muted">Tarefas internas da TaskFlow</p>
+<!-- RF-02/03, US-02: título obrigatório e descrição opcional. -->
 <form id="task-form">
 <label for="titulo">Título (obrigatório)</label>
 <input id="titulo" name="titulo" required maxlength="200" autocomplete="off">
@@ -30,10 +32,14 @@ li p{white-space:pre-wrap;margin:.35rem 0}.status{font-size:.85rem;color:#4c5b6c
 <h2>Lista de tarefas</h2><p id="empty">Não existem tarefas</p><ul id="tasks"></ul>
 </main>
 <script>
+// RF-01/06: atualizar a lista com dados da API (US-01/05/06/07).
+// RNF-03/04: mostrar erros compreensíveis e atualizar após operações.
+// textContent evita interpretar os dados introduzidos como HTML.
 const form=document.getElementById('task-form');
 const feedback=document.getElementById('feedback');
 const tasks=document.getElementById('tasks');
 const empty=document.getElementById('empty');
+// RF-07: centralizar pedidos e tratamento de respostas HTTP.
 async function request(path,options){
  const response=await fetch(path,options);
  if(!response.ok){
@@ -42,6 +48,7 @@ async function request(path,options){
  }
  return response.json();
 }
+// RF-01: lista completa e mensagem quando não existem tarefas.
 async function refresh(){
  const data=await request('/api/tasks');
  tasks.replaceChildren();empty.hidden=data.length>0;
@@ -62,6 +69,7 @@ async function refresh(){
   li.append(details,action);tasks.append(li);
  }
 }
+// RF-02/03: validar o formulário antes de criar a tarefa.
 form.addEventListener('submit',async(event)=>{
  event.preventDefault();
  const titulo=document.getElementById('titulo').value.trim();

@@ -1,3 +1,9 @@
+"""Regras de tarefas e armazenamento volátil — RF-01 a RF-05, RT-07.
+
+US-02: criar tarefa com título não vazio, ID único e estado Pendente.
+US-03/04: concluir e reabrir; operações repetidas geram erro.
+O Lock evita alterações concorrentes; reiniciar perde os dados.
+"""
 from dataclasses import dataclass
 from threading import Lock
 

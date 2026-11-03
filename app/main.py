@@ -1,3 +1,11 @@
+"""API HTTP SmartTasks — RF-01 a RF-08, US-01 a US-08 e US-10.
+
+GET /health (RF-08) devolve 200; GET /api/tasks (RF-01/06) lista;
+POST /api/tasks (RF-02/03) cria com 201 ou validação 422;
+POST /api/tasks/{id}/complete e /reopen (RF-04/05) mudam estado.
+ID inexistente -> 404; transição inválida -> 409.
+O armazenamento em memória reinicia com o processo (RT-07).
+"""
 from pathlib import Path
 from typing import Annotated
 from fastapi import FastAPI, HTTPException

@@ -1,3 +1,7 @@
+"""Fixture de isolamento dos testes — RNF-06 e RT-07.
+
+Cada teste usa um TaskStore novo, para não depender de outros testes.
+"""
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app

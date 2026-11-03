@@ -1,3 +1,10 @@
+"""Testes unitários — RNF-06 e matriz de rastreabilidade.
+
+test_empty_and_creation: UT-01/02/05/06/11, RF-01/02, US-01/02, BDD-01/02.
+test_invalid_title: UT-03/04, RF-03, US-02, BDD-02.
+test_transitions: UT-07/08/09/10, RF-04/05, US-03/04, BDD-03/04.
+test_store_isolation: UT-12, RT-07, US-12.
+"""
 import pytest
 from app.store import InvalidTransition, NotFound, TaskStore
 

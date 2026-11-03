@@ -1,3 +1,10 @@
+"""Passos Gherkin -> Python (RNF-06 / US-11).
+
+As etiquetas BDD/US/RF estão em cada cenário .feature.
+Os passos partilham a fixture TestClient, isolada por cenário.
+BDD-09 verifica configuração Compose (não arranque real).
+BDD-11 verifica relatórios existentes, sem executar testes recursivamente.
+"""
 from pathlib import Path
 import pytest
 from pytest_bdd import given, scenarios, then, when

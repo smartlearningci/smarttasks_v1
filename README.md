@@ -46,3 +46,15 @@ docker compose down
 ## Documentação
 
 Consultar `docs/` para contexto, requisitos, arquitetura, User Stories, Gherkin e estratégia de testes.
+
+## Como ler o código e relacionar requisitos com testes
+
+1. Começar por `docs/01_contexto_e_personas.md` (problema da TaskFlow).
+2. Consultar `docs/02_requisitos_e_mvp.md` (RF, RNF, RT, US e matriz).
+3. Ler `app/store.py` (regras e memória), depois `app/main.py` (API).
+4. Analisar `app/index.html` (interface e chamadas HTTP).
+5. Estudar `Dockerfile` e `compose.yaml` (imagem, serviço e portas).
+6. Nos testes, procurar os identificadores UT/IT/BDD e as referências RF/US.
+7. Executar `bash scripts/run_tests.sh` e consultar `reports/*/results.xml` e `results.html`.
+
+Os comentários documentam o comportamento esperado; não constituem prova de execução. A validação do JavaScript num browser e o arranque real Docker exigem verificações próprias.

@@ -86,3 +86,7 @@ Cada história é acompanhada por cenário Gherkin no plano de testes. O identif
 
 ## 8. Critério de conclusão
 O MVP só é validado quando o serviço inicia, as operações e os erros previstos funcionam, os testes obrigatórios passam e existem relatórios JUnit XML e HTML de cada conjunto executado. Não se afirma que os testes já passaram antes da implementação.
+
+## 9. Rastreabilidade no código e nos testes
+
+Os módulos Python e os ficheiros de suporte devem conter comentários pedagógicos que expliquem a sua função. Os testes unitários e de integração identificam no cabeçalho o nome da função de teste, IDs UT/IT, requisitos RF/RNF/RT e User Stories US. Cada cenário `.feature` identifica em comentário o respetivo BDD, requisito e User Story. O plano detalhado está em `docs/04_plano_de_testes.md`.
