@@ -58,3 +58,9 @@ Consultar `docs/` para contexto, requisitos, arquitetura, User Stories, Gherkin 
 7. Executar `bash scripts/run_tests.sh` e consultar `reports/*/results.xml` e `results.html`.
 
 Os comentários documentam o comportamento esperado; não constituem prova de execução. A validação do JavaScript num browser e o arranque real Docker exigem verificações próprias.
+
+## Relatório global dos testes
+
+Após instalar as dependências e executar `bash scripts/run_tests.sh`, abrir `reports/index.html` num browser. O relatório reúne os testes unitários, de integração e BDD, com totais, identificação, objetivo, requisitos, User Stories e detalhes de falhas. Cada suite conserva os seus relatórios em `reports/unit/`, `reports/integration/` e `reports/bdd/`.
+
+**Cores:** verde = aprovado; vermelho = falhou/erro; amarelo = ignorado; cinzento = não executado. Um teste ignorado não significa que passou. Os relatórios anteriores são eliminados antes de cada suite para evitar apresentar resultados antigos. O teste Docker BDD valida a configuração, não o arranque real do contentor.

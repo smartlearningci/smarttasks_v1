@@ -188,3 +188,9 @@ Implementar aplicação, ficheiros .feature, passos pytest-bdd, testes unitário
 O código e os ficheiros de suporte (`Dockerfile`, `compose.yaml`, dependências, exclusões e scripts) devem explicar a finalidade das decisões relevantes. Cada teste deve ser rastreável a pelo menos um requisito e, quando aplicável, a uma User Story e a um cenário BDD. Os testes Python incluem um mapa de funções para IDs UT/IT no cabeçalho; os cenários Gherkin incluem os identificadores BDD/US/RF em comentários. Os relatórios XML e HTML são a evidência real de execução, não os comentários.
 
 **Limitações de validação:** BDD-09 verifica a configuração Compose, não prova que o contentor arranca; BDD-11 verifica relatórios previamente gerados; o teste HTTP da interface não executa JavaScript. Estas verificações exigem execução complementar antes de declarar validação completa.
+
+## 11. Relatório global e descrições pedagógicas
+
+O comando `bash scripts/run_tests.sh` executa as suites unit, integration e bdd e gera os respetivos ficheiros `results.xml` e `results.html`. Gera também `reports/index.html`, que agrega todos os resultados. Cada registo inclui título compreensível, objetivo, RF/RNF/RT, US, resultado e diagnóstico de falha. O catálogo do gerador `scripts/report_from_junit.py` estabelece a rastreabilidade dos nomes de testes. Os cenários `.feature` incluem comentários com objetivo e resultado esperado.
+
+A cor verde identifica aprovação; vermelho identifica falha ou erro; amarelo identifica ignorado; cinzento identifica suite não executada. A ausência de relatório XML é apresentada como «Não executado», nunca como aprovação. Os relatórios anteriores são eliminados antes da execução da respetiva suite, reduzindo o risco de resultados desatualizados. Não se confunde validação de configuração Docker com teste de arranque real, nem entrega de HTML com execução do JavaScript.
