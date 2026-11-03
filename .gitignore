@@ -1,0 +1,6 @@
+# RNF-06: não versionar ambientes locais, caches ou relatórios gerados.
+__pycache__/
+.pytest_cache/
+.venv/
+reports/
+*.pyc

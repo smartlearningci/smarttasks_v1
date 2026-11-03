@@ -64,3 +64,7 @@ Os comentários documentam o comportamento esperado; não constituem prova de ex
 Após instalar as dependências e executar `bash scripts/run_tests.sh`, abrir `reports/index.html` num browser. O relatório reúne os testes unitários, de integração e BDD, com totais, identificação, objetivo, requisitos, User Stories e detalhes de falhas. Cada suite conserva os seus relatórios em `reports/unit/`, `reports/integration/` e `reports/bdd/`.
 
 **Cores:** verde = aprovado; vermelho = falhou/erro; amarelo = ignorado; cinzento = não executado. Um teste ignorado não significa que passou. Os relatórios anteriores são eliminados antes de cada suite para evitar apresentar resultados antigos. O teste Docker BDD valida a configuração, não o arranque real do contentor.
+
+## Resolução de problemas na instalação
+
+Se surgir `No module named 'app.store'`, `fixture 'client' not found`, ausência de testes BDD ou `requirements.txt` inexistente, confirmar que a cópia do repositório está completa com `git pull origin main` e `git status`. O ficheiro `pytest.ini` define a raiz de importação; `tests/conftest.py` fornece a fixture `client`; `tests/bdd/test_steps.py` liga cenários Gherkin ao pytest. O script de testes verifica os ficheiros obrigatórios antes de iniciar. No Linux com Conda, desativar o ambiente Conda antes de ativar `.venv`, se necessário. Os relatórios são gerados localmente e não devem ser confundidos com aprovação quando há erros de preparação.

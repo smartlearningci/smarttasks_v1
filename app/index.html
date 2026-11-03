@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<!-- RNF-01/02: interface única, com lista e formulário de criação. -->
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartTasks — TaskFlow</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#172238;background:#f4f6fa}
+body{max-width:780px;margin:2.5rem auto;padding:0 1rem}
+main{background:white;border:1px solid #e0e5ee;border-radius:12px;padding:1.5rem}
+h1{margin:0}.muted{color:#59677b}form{display:grid;gap:.7rem;margin:1.5rem 0}
+input,textarea{font:inherit;padding:.7rem;border:1px solid #a7b1c0;border-radius:6px}
+button{font:inherit;padding:.65rem .9rem;border:0;border-radius:6px;background:#174b96;color:white;cursor:pointer}
+button:hover{background:#123b77}ul{list-style:none;padding:0}
+li{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 0;border-top:1px solid #e5e8ee}
+li p{white-space:pre-wrap;margin:.35rem 0}.status{font-size:.85rem;color:#4c5b6c}
+#feedback{min-height:1.4em}.error{color:#a32121}
+@media(max-width:520px){li{align-items:start;flex-direction:column}}
+</style>
+</head>
+<body><main>
+<h1>SmartTasks</h1><p class="muted">Tarefas internas da TaskFlow</p>
+<!-- RF-02/03, US-02: título obrigatório e descrição opcional. -->
+<form id="task-form">
+<label for="titulo">Título (obrigatório)</label>
+<input id="titulo" name="titulo" required maxlength="200" autocomplete="off">
+<label for="descricao">Descrição (opcional)</label>
+<textarea id="descricao" name="descricao" rows="3"></textarea>
+<button type="submit">Criar tarefa</button>
+</form>
+<p id="feedback" role="status" aria-live="polite"></p>
+<h2>Lista de tarefas</h2><p id="empty">Não existem tarefas</p><ul id="tasks"></ul>
+</main>
+<script>
+// RF-01/06: atualizar a lista com dados da API (US-01/05/06/07).
+// RNF-03/04: mostrar erros compreensíveis e atualizar após operações.
+// textContent evita interpretar os dados introduzidos como HTML.
+const form=document.getElementById('task-form');
+const feedback=document.getElementById('feedback');
+const tasks=document.getElementById('tasks');
+const empty=document.getElementById('empty');
+// RF-07: centralizar pedidos e tratamento de respostas HTTP.
+async function request(path,options){
+ const response=await fetch(path,options);
+ if(!response.ok){
+  const body=await response.json().catch(()=>({}));
+  throw new Error(response.status===422?'Introduza um título válido.':(typeof body.detail==='string'?body.detail:'Não foi possível concluir a operação.'));
+ }
+ return response.json();
+}
+// RF-01: lista completa e mensagem quando não existem tarefas.
+async function refresh(){
+ const data=await request('/api/tasks');
+ tasks.replaceChildren();empty.hidden=data.length>0;
+ for(const task of data){
+  const li=document.createElement('li'),details=document.createElement('div');
+  const title=document.createElement('strong');title.textContent=task.titulo;
+  const description=document.createElement('p');description.textContent=task.descricao;
+  const status=document.createElement('span');status.className='status';status.textContent=task.estado;
+  details.append(title,description,status);
+  const action=document.createElement('button'),complete=task.estado==='Pendente';
+  action.textContent=complete?'Concluir':'Reabrir';
+  action.addEventListener('click',async()=>{
+   try{
+    await request('/api/tasks/'+task.id+'/'+(complete?'complete':'reopen'),{method:'POST'});
+    feedback.className='';feedback.textContent='Estado atualizado.';await refresh();
+   }catch(error){feedback.className='error';feedback.textContent=error.message;}
+  });
+  li.append(details,action);tasks.append(li);
+ }
+}
+// RF-02/03: validar o formulário antes de criar a tarefa.
+form.addEventListener('submit',async(event)=>{
+ event.preventDefault();
+ const titulo=document.getElementById('titulo').value.trim();
+ const descricao=document.getElementById('descricao').value;
+ if(!titulo){feedback.className='error';feedback.textContent='O título é obrigatório.';return;}
+ try{
+  await request('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({titulo,descricao})});
+  form.reset();feedback.className='';feedback.textContent='Tarefa criada.';await refresh();
+ }catch(error){feedback.className='error';feedback.textContent=error.message;}
+});
+refresh().catch(()=>{feedback.className='error';feedback.textContent='Não foi possível carregar as tarefas.';});
+</script></body></html>

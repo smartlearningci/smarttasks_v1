@@ -2,6 +2,16 @@
 # RNF-06 / US-11: executar todas as suites e gerar relatório global.
 # Os resultados de cada suite são preservados mesmo quando outra falha.
 set -u
+# Garantir que o script funciona mesmo invocado fora da pasta do projeto.
+cd "$(dirname "$0")/.." || exit 1
+export PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}"
+# Detetar uma cópia incompleta antes de executar qualquer teste.
+for required in requirements.txt app/main.py app/store.py tests/conftest.py tests/bdd/test_steps.py; do
+  if [ ! -f "$required" ]; then
+    echo "ERRO: falta o ficheiro $required. Atualiza o repositório com git pull origin main." >&2
+    exit 2
+  fi
+done
 mkdir -p reports/{unit,integration,bdd}
 failed=0
 for suite in unit integration bdd; do
