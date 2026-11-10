@@ -1,38 +1,20 @@
 # SmartTasks — Contexto e personas
 
-## 1. Empresa e problema
-A TaskFlow é uma empresa fictícia de serviços com 25 colaboradores. As tarefas internas são atualmente geridas por emails, mensagens e reuniões, sem lista central. Isto dificulta saber que tarefas existem e quais estão concluídas.
+## Empresa e problema
+A TaskFlow é uma empresa fictícia de serviços com 25 colaboradores. Atualmente, as tarefas internas são acompanhadas por emails, mensagens e reuniões. Não existe uma lista central, o que dificulta consultar o trabalho pendente e perceber o que já foi concluído.
 
-## 2. Objetivos
-- Centralizar o registo e a consulta das tarefas numa aplicação web local.
-- Permitir criar, concluir e reabrir tarefas com apenas dois estados.
-- Facilitar o acompanhamento visual do trabalho.
-- Demonstrar, numa formação de Cloud Computing, a passagem de requisitos a testes, API, containerização e evolução arquitetural.
+## Objetivo
+Criar o **SmartTasks**, uma aplicação web simples que centralize a lista de tarefas e permita criar, concluir e reabrir tarefas. O projeto serve de exemplo prático numa formação de Cloud Computing, começando com execução local e evoluindo por etapas.
 
-## 3. Personas
-| Persona | Papel | Necessidade | Utilização prevista |
-|---|---|---|---|
-| Ana Martins | Colaboradora | Registar e acompanhar atividades | Consultar, criar, concluir e reabrir tarefas |
-| Miguel Costa | Responsável de equipa | Acompanhar o trabalho | Consultar tarefas, descrições e estados atualizados |
-| Sofia Almeida | Responsável de TI | Manter o serviço operacional | Iniciar a aplicação, verificar saúde, executar testes e manter o código |
+## Personas
+| Persona | Papel | Necessidade no MVP |
+| --- | --- | --- |
+| Ana Martins | Colaboradora | Criar tarefas e acompanhar a lista e os estados. |
+| Miguel Costa | Responsável de equipa | Consultar tarefas e respetivos estados. |
+| Sofia Almeida | Responsável de TI | Manter e executar a aplicação. |
 
-As personas são perspetivas de utilização, **não perfis de autorização**: não existe login, controlo de acesso ou atribuição de tarefas. Qualquer utilizador da interface pode executar as operações disponíveis.
+## Âmbito inicial
+O MVP é uma demonstração pedagógica local. Não tem contas de utilizador nem permissões diferenciadas por persona. Todos os utilizadores que acedam à interface local dispõem das mesmas operações; os papéis acima descrevem necessidades, não controlo de acesso.
 
-## 4. Âmbito pedagógico e limites
-O MVP disponibiliza uma única lista partilhada de tarefas, criação com título obrigatório e descrição opcional, conclusão e reabertura. Não inclui edição, eliminação, responsáveis, prioridades, datas-limite, filtros, pesquisa, autenticação, notificações ou base de dados. Os dados em memória perdem-se quando o processo reinicia.
-
-## 5. Lacunas identificadas e resolvidas na especificação
-| ID | Lacuna | Decisão para o MVP |
-|---|---|---|
-| L-01 | Lista vazia | Mostrar «Não existem tarefas» |
-| L-02 | Título inválido | Rejeitar vazio ou apenas espaços |
-| L-03 | Identificação | Gerar ID único automaticamente |
-| L-04 | Transição repetida | Rejeitar conclusão de concluída e reabertura de pendente |
-| L-05 | ID inexistente | Responder HTTP 404 |
-| L-06 | Reinício | Perda de tarefas documentada e verificável |
-| L-07 | Testes ausentes | pytest e pytest-bdd |
-| L-08 | Relatórios ausentes | XML JUnit e HTML por categoria |
-| L-09 | Rastreabilidade ausente | Matriz requisito–história–cenário–teste |
-| L-10 | Docker não validado | Verificação automatizada de integração local |
-
-Estas decisões apenas explicitam regras necessárias para implementar e testar o âmbito aprovado.
+## Resultado esperado
+Uma aplicação acessível em http://localhost:8080, com interface simples e API HTTP, que permita demonstrar um percurso completo: criar uma tarefa, vê-la na lista, concluí-la e reabri-la.

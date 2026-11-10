@@ -1,57 +1,47 @@
-"""Regras de tarefas e armazenamento volátil — RF-01 a RF-05, RT-07.
+"""Persistência PostgreSQL — US-01 a US-05; RF-01 a RF-05.
 
-US-02: criar tarefa com título não vazio, ID único e estado Pendente.
-US-03/04: concluir e reabrir; operações repetidas geram erro.
-O Lock evita alterações concorrentes; reiniciar perde os dados.
+A interface pública desta classe é a mesma do MVP em memória.
+A API não precisa de conhecer os detalhes das consultas SQL (RNF-04).
 """
-from dataclasses import dataclass
-from threading import Lock
+from .db import connect
+from .models import Task, TaskCreate
 
-@dataclass
-class Task:
-    id: int
-    titulo: str
-    descricao: str
-    estado: str = "Pendente"
-
-    def as_dict(self):
-        return vars(self).copy()
-
-class TaskError(Exception): pass
-class NotFound(TaskError): pass
-class InvalidTransition(TaskError): pass
 
 class TaskStore:
-    def __init__(self):
-        self._tasks = {}
-        self._next_id = 1
-        self._lock = Lock()
+    """Operações sobre tarefas; cada método abre e fecha a ligação."""
 
-    def list(self):
-        with self._lock:
-            return [task.as_dict() for task in self._tasks.values()]
+    def list_tasks(self) -> list[Task]:
+        """US-01/US-05; RF-01: listar tarefas pela ordem de criação."""
+        with connect() as connection:
+            rows = connection.execute(
+                "SELECT id, title, description, status FROM tasks ORDER BY id"
+            ).fetchall()
+        return [Task(**row) for row in rows]
 
-    def create(self, titulo, descricao=""):
-        if not isinstance(titulo, str) or not titulo.strip():
-            raise ValueError("O título é obrigatório.")
-        with self._lock:
-            task = Task(self._next_id, titulo.strip(), descricao or "")
-            self._tasks[task.id] = task
-            self._next_id += 1
-            return task.as_dict()
+    def create(self, data: TaskCreate) -> Task:
+        """US-02; RF-02: criar tarefa Aberta e devolver o ID gerado pela BD."""
+        with connect() as connection:
+            row = connection.execute(
+                """
+                INSERT INTO tasks (title, description, status)
+                VALUES (%s, %s, 'Aberta')
+                RETURNING id, title, description, status
+                """,
+                (data.title, data.description),
+            ).fetchone()
+        return Task(**row)
 
-    def transition(self, task_id, from_state, to_state):
-        with self._lock:
-            task = self._tasks.get(task_id)
-            if task is None:
-                raise NotFound("Tarefa não encontrada.")
-            if task.estado != from_state:
-                raise InvalidTransition("A tarefa já está neste estado.")
-            task.estado = to_state
-            return task.as_dict()
+    def set_status(self, task_id: int, status: str) -> Task | None:
+        """US-03/US-04; RF-03/RF-04: atualizar ou devolver None para 404.
 
-    def complete(self, task_id):
-        return self.transition(task_id, "Pendente", "Concluída")
-
-    def reopen(self, task_id):
-        return self.transition(task_id, "Concluída", "Pendente")
+        Os valores são passados como parâmetros, nunca concatenados no SQL.
+        """
+        with connect() as connection:
+            row = connection.execute(
+                """
+                UPDATE tasks SET status = %s WHERE id = %s
+                RETURNING id, title, description, status
+                """,
+                (status, task_id),
+            ).fetchone()
+        return Task(**row) if row is not None else None

@@ -1,6 +1,10 @@
-# RNF-06: não versionar ambientes locais, caches ou relatórios gerados.
+# Não publicar passwords e configurações locais.
+.env
+.env.*
+!.env.example
+
+# Ficheiros gerados localmente.
 __pycache__/
+*.pyc
 .pytest_cache/
 .venv/
-reports/
-*.pyc

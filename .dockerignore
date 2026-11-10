@@ -1,10 +1,10 @@
-# RT-04: excluir Git, ambientes virtuais, caches e relatórios do build.
-# Testes não são necessários para executar a aplicação no contentor.
 .git
-.venv
+.gitignore
 __pycache__/
-.pytest_cache/
 *.pyc
-reports/
-tests/
-*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.env
+.env.*
+*.zip

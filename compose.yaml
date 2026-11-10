@@ -1,9 +1,37 @@
-# RT-05: um serviço; sem base de dados, filas ou volumes.
 services:
   smarttasks:
-    # RT-04: construir imagem a partir do Dockerfile local.
+    # Serviço e porta do MVP preservados; só muda o armazenamento interno.
     build: .
-    # RT-06: publicar 8080 apenas no próprio computador;
-    # encaminhar para a porta 8000 do contentor.
     ports:
       - "127.0.0.1:8080:8000"
+    environment:
+      # O Compose lê POSTGRES_PASSWORD do .env local, ignorado pelo Git.
+      # Variáveis separadas evitam problemas com caracteres especiais em URLs.
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: smarttasks
+      PGUSER: smarttasks
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD no ficheiro .env}
+    depends_on:
+      db:
+        # A API só arranca depois de PostgreSQL aceitar ligações.
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: smarttasks
+      POSTGRES_USER: smarttasks
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD no ficheiro .env}
+    volumes:
+      # Dados PostgreSQL persistem entre reinícios/recriações.
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smarttasks -d smarttasks"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Sem ports: PostgreSQL só é acessível pela rede interna do Compose.
+
+volumes:
+  postgres_data:

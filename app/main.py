@@ -1,60 +1,71 @@
-"""API HTTP SmartTasks — RF-01 a RF-08, US-01 a US-08 e US-10.
+"""Camada HTTP SmartTasks (RF-01 a RF-06).
 
-GET /health (RF-08) devolve 200; GET /api/tasks (RF-01/06) lista;
-POST /api/tasks (RF-02/03) cria com 201 ou validação 422;
-POST /api/tasks/{id}/complete e /reopen (RF-04/05) mudam estado.
-ID inexistente -> 404; transição inválida -> 409.
-O armazenamento em memória reinicia com o processo (RT-07).
+As rotas e os formatos de resposta permanecem iguais aos do MVP V1.
+A persistência fica isolada em app/store.py e app/db.py (RNF-04).
 """
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Annotated
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, StringConstraints, field_validator
-from app.store import InvalidTransition, NotFound, TaskStore
 
-app = FastAPI(title="SmartTasks")
+from .db import initialize_schema
+from .models import Task, TaskCreate
+from .store import TaskStore
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """RNF-05: inicializar a tabela antes de aceitar pedidos HTTP.
+
+    CREATE TABLE IF NOT EXISTS não apaga tarefas existentes.
+    Se a BD não estiver acessível, o arranque falha visivelmente.
+    """
+    initialize_schema()
+    yield
+
+
+app = FastAPI(title="SmartTasks", version="1.0.0", lifespan=lifespan)
 store = TaskStore()
 
-class TaskCreate(BaseModel):
-    titulo: Annotated[str, StringConstraints(min_length=1)]
-    descricao: str = ""
 
-    @field_validator("titulo")
-    @classmethod
-    def valid_title(cls, value):
-        if not value.strip():
-            raise ValueError("O título é obrigatório.")
-        return value.strip()
+@app.get("/", include_in_schema=False)
+def index() -> FileResponse:
+    """US-01/US-02; RNF-01/RNF-03: servir a interface HTML existente."""
+    return FileResponse(Path(__file__).parent / "static" / "index.html")
 
-@app.get("/")
-def home():
-    return FileResponse(Path(__file__).parent / "index.html")
 
 @app.get("/health")
-def health():
+def health() -> dict[str, str]:
+    """US-06; RF-06: manter a resposta HTTP 200 do MVP."""
     return {"status": "ok"}
 
-@app.get("/api/tasks")
-def list_tasks():
-    return store.list()
 
-@app.post("/api/tasks", status_code=201)
-def create_task(task: TaskCreate):
-    return store.create(task.titulo, task.descricao)
+@app.get("/api/tasks", response_model=list[Task])
+def list_tasks() -> list[Task]:
+    """US-01/US-05; RF-01/RF-05: devolver tarefas existentes."""
+    return store.list_tasks()
 
-def change_state(task_id: int, action: str):
-    try:
-        return store.complete(task_id) if action == "complete" else store.reopen(task_id)
-    except NotFound as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except InvalidTransition as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
-@app.post("/api/tasks/{task_id}/complete")
-def complete_task(task_id: int):
-    return change_state(task_id, "complete")
+@app.post("/api/tasks", response_model=Task, status_code=201)
+def create_task(data: TaskCreate) -> Task:
+    """US-02; RF-02/RF-05: criar tarefa com entrada validada."""
+    return store.create(data)
 
-@app.post("/api/tasks/{task_id}/reopen")
-def reopen_task(task_id: int):
-    return change_state(task_id, "reopen")
+
+@app.patch("/api/tasks/{task_id}/complete", response_model=Task)
+def complete_task(task_id: int) -> Task:
+    """US-03; RF-03/RF-05: concluir tarefa ou responder 404."""
+    task = store.set_status(task_id, "Concluída")
+    if task is None:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada.")
+    return task
+
+
+@app.patch("/api/tasks/{task_id}/reopen", response_model=Task)
+def reopen_task(task_id: int) -> Task:
+    """US-04; RF-04/RF-05: reabrir tarefa ou responder 404."""
+    task = store.set_status(task_id, "Aberta")
+    if task is None:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada.")
+    return task

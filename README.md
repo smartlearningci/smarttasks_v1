@@ -1,70 +1,75 @@
-# SmartTasks — TaskFlow
+# SmartTasks — V2 com persistência PostgreSQL
 
-MVP pedagógico de gestão de tarefas com Python, FastAPI e Docker. Dados em memória: **as tarefas perdem-se quando o processo reinicia**. Sem login ou base de dados.
+Aplicação pedagógica TaskFlow: criar, listar, concluir e reabrir tarefas. A API e a interface HTML são as mesmas da V1. **Na V2, as tarefas ficam guardadas em PostgreSQL**, no volume Docker `postgres_data`.
 
-## Obter e iniciar
+## Requisitos
+Git, Docker e Docker Compose.
 
-Requisitos: Git e Docker com Docker Compose.
-
+## Clonar e configurar
 ```bash
-git clone https://github.com/smartlearningci/smarttasks_v1.git
-cd smarttasks_v1
-docker compose up --build -d
+git clone https://github.com/smartlearningci/smarttasks.git
+cd smarttasks
+cp .env.example .env
+```
+Editar `.env` e substituir `SUBSTITUIR_LOCALMENTE` por uma password forte, local. **Não publicar o ficheiro `.env`**. Se já existir um volume PostgreSQL inicializado, alterar a password no `.env` não altera automaticamente a password do utilizador existente na base.
+
+## Construir e iniciar
+```bash
+docker compose config --quiet
+docker compose up -d --build
+docker compose ps
+```
+Abrir **http://localhost:8080**. O serviço `db` usa PostgreSQL 17 e é aguardado pelo healthcheck antes de iniciar a aplicação. A porta 5432 não é publicada; ambos comunicam pela rede padrão do Compose.
+
+## Verificar aplicação e base de dados
+```bash
+curl http://localhost:8080/health
+curl http://localhost:8080/api/tasks
+```
+Criar uma tarefa na interface, concluí-la e reabri-la. Consultar a tabela real:
+```bash
+docker compose exec db psql -U smarttasks -d smarttasks -c "SELECT id, title, description, status FROM tasks ORDER BY id;"
+```
+Reiniciar apenas a aplicação e verificar que a tarefa continua na interface e na BD:
+```bash
+docker compose restart smarttasks
 ```
 
-Abrir http://localhost:8080. Verificar saúde em http://localhost:8080/health.
-
-## Operações da API
-
-- `GET /api/tasks` — listar tarefas.
-- `POST /api/tasks` — criar, JSON: `{"titulo":"Preparar reunião","descricao":"Opcional"}`.
-- `POST /api/tasks/{id}/complete` — concluir.
-- `POST /api/tasks/{id}/reopen` — reabrir.
-- `GET /health` — saúde.
-
-Estados: `Pendente` e `Concluída`. Erros: 422 para entrada inválida, 404 para ID inexistente e 409 para transição inválida.
-
-## Testes e relatórios
-
-Requisitos locais: Python 3.12 e ambiente virtual.
-
+## Testes automatizados
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-bash scripts/run_tests.sh
+docker compose run --rm --no-deps smarttasks python -m pytest -q tests/test_api.py
 ```
+Os testes de contrato HTTP usam um duplo de armazenamento e **não modificam a base de dados real**.
 
-O script produz HTML a partir de JUnit XML, mesmo quando há falhas. Os relatórios HTML/XML são locais e não são versionados. A execução de testes Docker requer Docker disponível; os testes de integração HTTP usam TestClient e não exigem Docker.
+Os testes T-14 a T-20 verificam PostgreSQL numa **base separada** cujo nome termina em `_test`. Não os executar sobre a base `smarttasks`. Para criar uma base de testes local (uma única vez):
+```bash
+docker compose exec db psql -U smarttasks -d postgres -c "CREATE DATABASE smarttasks_test;"
+```
+Para executar T-14 a T-20 dentro do container, definir `TEST_DATABASE_URL` apenas no comando de teste, com a password local corretamente codificada para URL. Alternativamente, executar os testes num ambiente Python de desenvolvimento que tenha acesso à base de testes. Sem `TEST_DATABASE_URL`, os testes de integração são assinalados como **skipped**, não como aprovados.
+
+Cada teste identifica US, RF/RNF, objetivo e resultado esperado. Consultar `docs/04_rastreabilidade_e_testes.md`.
+
+## Diagnóstico e recuperação sem perda de dados
+1. `docker compose ps`: verificar se `db` está saudável e `smarttasks` em execução.
+2. `docker compose logs --tail=80 db` e `docker compose logs --tail=80 smarttasks`: procurar falhas de autenticação, ligação ou esquema.
+3. Confirmar que `.env` existe e contém a password definida quando o volume PostgreSQL foi inicializado. Se a password mudou, corrigir a configuração ou alterar a password do utilizador na base de forma controlada.
+4. `docker compose up -d --build`: voltar a iniciar sem eliminar volumes.
+5. Se houver erro de ligação, verificar `docker compose exec db pg_isready -U smarttasks -d smarttasks`.
+
+**Não utilizar `docker compose down -v` como tentativa de reparação**: esse comando remove o volume e pode destruir dados.
 
 ## Parar
-
 ```bash
 docker compose down
 ```
+O volume `postgres_data` permanece.
 
-## Documentação
+## Organização
+- `app/main.py`: endpoints HTTP e inicialização de esquema.
+- `app/models.py`: modelos e validações existentes.
+- `app/store.py`: consultas SQL parametrizadas; `app/db.py`: ligação e esquema.
+- `app/static/index.html`: interface HTML preservada.
+- `tests/test_api.py`: contrato HTTP; `tests/test_postgres.py`: integração real.
+- `docs/`: requisitos, US, arquitetura e rastreabilidade.
 
-Consultar `docs/` para contexto, requisitos, arquitetura, User Stories, Gherkin e estratégia de testes.
-
-## Como ler o código e relacionar requisitos com testes
-
-1. Começar por `docs/01_contexto_e_personas.md` (problema da TaskFlow).
-2. Consultar `docs/02_requisitos_e_mvp.md` (RF, RNF, RT, US e matriz).
-3. Ler `app/store.py` (regras e memória), depois `app/main.py` (API).
-4. Analisar `app/index.html` (interface e chamadas HTTP).
-5. Estudar `Dockerfile` e `compose.yaml` (imagem, serviço e portas).
-6. Nos testes, procurar os identificadores UT/IT/BDD e as referências RF/US.
-7. Executar `bash scripts/run_tests.sh` e consultar `reports/*/results.xml` e `results.html`.
-
-Os comentários documentam o comportamento esperado; não constituem prova de execução. A validação do JavaScript num browser e o arranque real Docker exigem verificações próprias.
-
-## Relatório global dos testes
-
-Após instalar as dependências e executar `bash scripts/run_tests.sh`, abrir `reports/index.html` num browser. O relatório reúne os testes unitários, de integração e BDD, com totais, identificação, objetivo, requisitos, User Stories e detalhes de falhas. Cada suite conserva os seus relatórios em `reports/unit/`, `reports/integration/` e `reports/bdd/`.
-
-**Cores:** verde = aprovado; vermelho = falhou/erro; amarelo = ignorado; cinzento = não executado. Um teste ignorado não significa que passou. Os relatórios anteriores são eliminados antes de cada suite para evitar apresentar resultados antigos. O teste Docker BDD valida a configuração, não o arranque real do contentor.
-
-## Resolução de problemas na instalação
-
-Se surgir `No module named 'app.store'`, `fixture 'client' not found`, ausência de testes BDD ou `requirements.txt` inexistente, confirmar que a cópia do repositório está completa com `git pull origin main` e `git status`. O ficheiro `pytest.ini` define a raiz de importação; `tests/conftest.py` fornece a fixture `client`; `tests/bdd/test_steps.py` liga cenários Gherkin ao pytest. O script de testes verifica os ficheiros obrigatórios antes de iniciar. No Linux com Conda, desativar o ambiente Conda antes de ativar `.venv`, se necessário. Os relatórios são gerados localmente e não devem ser confundidos com aprovação quando há erros de preparação.
+**Fora do âmbito:** login, filas, notificações, serviços externos pagos, CI/CD e observabilidade avançada.

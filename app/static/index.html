@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartTasks — TaskFlow</title>
+  <style>
+    /* Interface pedagógica simples e responsiva (RNF-03). */
+    body { font-family: system-ui, sans-serif; background: #f5f7fb; color: #172033; margin: 0; }
+    main { max-width: 760px; margin: 40px auto; padding: 0 18px; }
+    h1 { margin-bottom: 4px; }
+    p { color: #566275; }
+    section { background: white; border: 1px solid #dce2eb; border-radius: 12px; padding: 22px; margin: 20px 0; }
+    label { display: block; font-weight: 600; margin: 12px 0 6px; }
+    input, textarea { box-sizing: border-box; width: 100%; padding: 11px; border: 1px solid #9ca8b8; border-radius: 7px; font: inherit; }
+    button { background: #175cd3; color: white; border: 0; border-radius: 7px; padding: 10px 16px; cursor: pointer; font: inherit; }
+    button:hover { background: #1049a7; }
+    button:disabled { opacity: .55; cursor: default; }
+    li { list-style: none; border-top: 1px solid #e6e9ef; padding: 15px 0; }
+    ul { padding: 0; }
+    .meta { font-size: .9rem; color: #566275; }
+    .error { color: #b42318; }
+    .success { color: #087443; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>SmartTasks</h1>
+  <p>TaskFlow · Gestão simples de tarefas</p>
+  <section>
+    <h2>Criar tarefa</h2>
+    <form id="create-form">
+      <label for="title">Título *</label>
+      <input id="title" name="title" required maxlength="200">
+      <label for="description">Descrição (opcional)</label>
+      <textarea id="description" name="description" rows="3"></textarea>
+      <p><button type="submit">Criar tarefa</button></p>
+    </form>
+    <p id="feedback" role="status" aria-live="polite"></p>
+  </section>
+  <section>
+    <h2>Tarefas</h2>
+    <p id="list-feedback" role="status"></p>
+    <ul id="tasks"></ul>
+  </section>
+</main>
+<script>
+  // A interface chama a API: não guarda tarefas no browser (RNF-05).
+  const tasksElement = document.querySelector('#tasks');
+  const feedback = document.querySelector('#feedback');
+
+  // RF-05: centralizar pedidos HTTP e apresentar erros compreensíveis.
+  async function request(url, options) {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(typeof body.detail === 'string'
+        ? body.detail : 'Não foi possível realizar a operação.');
+    }
+    return response.json();
+  }
+
+  // US-01/US-05, RF-01: atualizar a lista e os estados após alterações.
+  async function refresh() {
+    const items = await request('/api/tasks');
+    tasksElement.replaceChildren();
+    document.querySelector('#list-feedback').textContent =
+      items.length ? '' : 'Ainda não existem tarefas.';
+
+    for (const task of items) {
+      const li = document.createElement('li');
+      const title = document.createElement('strong');
+      title.textContent = task.title;
+      li.append(title);
+
+      if (task.description) {
+        const desc = document.createElement('p');
+        desc.textContent = task.description;
+        li.append(desc);
+      }
+
+      const meta = document.createElement('p');
+      meta.className = 'meta';
+      meta.textContent = `Estado: ${task.status}`;
+      li.append(meta);
+
+      // US-03/US-04, RF-03/RF-04: botão depende do estado atual.
+      const button = document.createElement('button');
+      const completed = task.status === 'Concluída';
+      button.textContent = completed ? 'Reabrir' : 'Concluir';
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        try {
+          const action = completed ? 'reopen' : 'complete';
+          await request(`/api/tasks/${task.id}/${action}`, { method: 'PATCH' });
+          await refresh();
+        } catch (error) {
+          feedback.textContent = error.message;
+          feedback.className = 'error';
+          button.disabled = false;
+        }
+      });
+      li.append(button);
+      tasksElement.append(li);
+    }
+  }
+
+  // US-02, RF-02: enviar formulário sem recarregar a página.
+  document.querySelector('#create-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    feedback.textContent = '';
+    try {
+      await request('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.elements.namedItem('title').value,
+          description: form.elements.namedItem('description').value
+        })
+      });
+      form.reset();
+      feedback.textContent = 'Tarefa criada.';
+      feedback.className = 'success';
+      await refresh();
+    } catch (error) {
+      feedback.textContent = error.message;
+      feedback.className = 'error';
+    }
+  });
+
+  refresh().catch(error => {
+    document.querySelector('#list-feedback').textContent = error.message;
+  });
+</script>
+</body>
+</html>
