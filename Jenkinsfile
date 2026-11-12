@@ -16,8 +16,9 @@ pipeline {
     }
 
     environment {
-        // Substituir pelo identificador real da conta/organização Docker Hub.
-        IMAGE_REPO = 'UTILIZADOR_DOCKERHUB/smarttasks'
+        // O nome da conta/organização Docker Hub tem de estar em minúsculas.
+        // ATENÇÃO: substituir este marcador antes do commit; não é um utilizador real.
+        IMAGE_REPO = 'smartlearningci/smarttasks_v1'
         // Cada execução ganha uma tag própria: ci-1, ci-2, ci-3...
         IMAGE_TAG = "ci-${BUILD_NUMBER}"
     }
@@ -32,6 +33,12 @@ pipeline {
 
         stage('Construir imagem') {
             steps {
+                // Evitar um build com o nome de exemplo não substituído.
+                script {
+                    if (env.IMAGE_REPO.contains('UTILIZADOR_DOCKERHUB')) {
+                        error('Substituir UTILIZADOR_DOCKERHUB no Jenkinsfile pelo namespace real do Docker Hub (minusculas) e fazer commit/push.')
+                    }
+                }
                 // Dockerfile da raiz do repositório SmartTasks.
                 sh 'docker build -t "$IMAGE_REPO:$IMAGE_TAG" .'
             }
